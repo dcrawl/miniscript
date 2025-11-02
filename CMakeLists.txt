@@ -43,6 +43,7 @@ set(MINISCRIPT_HEADERS
 	MiniScript-cpp/src/MiniScript/MiniscriptParser.h
 	MiniScript-cpp/src/MiniScript/MiniscriptTAC.h
 	MiniScript-cpp/src/MiniScript/MiniscriptTypes.h
+	MiniScript-cpp/src/MiniScript/OptimizedEvaluators.h
 	MiniScript-cpp/src/MiniScript/QA.h
 	MiniScript-cpp/src/MiniScript/RefCountedStorage.h
 	MiniScript-cpp/src/MiniScript/SimpleString.h
@@ -76,6 +77,7 @@ add_library(miniscript-cpp
 	MiniScript-cpp/src/MiniScript/MiniscriptParser.cpp
 	MiniScript-cpp/src/MiniScript/MiniscriptTAC.cpp
 	MiniScript-cpp/src/MiniScript/MiniscriptTypes.cpp
+	MiniScript-cpp/src/MiniScript/OptimizedEvaluators.cpp
 	MiniScript-cpp/src/MiniScript/QA.cpp
 	MiniScript-cpp/src/MiniScript/SimpleString.cpp
 	MiniScript-cpp/src/MiniScript/SimpleVector.cpp
@@ -139,5 +141,55 @@ if(MINISCRIPT_BUILD_TESTING)
 		set_tests_properties(Miniscript.cs.UnitTests Miniscript.cs.Integration PROPERTIES FAIL_REGULAR_EXPRESSION "FAIL|Error")
 	endif()
 endif()
+
+# Phase 2.1 Performance Benchmark
+add_executable(phase21-benchmark
+	MiniScript-cpp/src/MiniScript/Phase2_1_Benchmark.cpp
+)
+target_include_directories(phase21-benchmark PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(phase21-benchmark PRIVATE miniscript-cpp)
+set_target_properties(phase21-benchmark PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+# Phase 2.1 Fast Path Validator
+add_executable(fastpath-validator
+	MiniScript-cpp/src/MiniScript/FastPathValidator.cpp
+)
+target_include_directories(fastpath-validator PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(fastpath-validator PRIVATE miniscript-cpp)
+set_target_properties(fastpath-validator PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+# Phase 2.1 Final Validation
+add_executable(phase21-final-validation
+	MiniScript-cpp/src/MiniScript/Phase21FinalValidation.cpp
+)
+target_include_directories(phase21-final-validation PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(phase21-final-validation PRIVATE miniscript-cpp)
+set_target_properties(phase21-final-validation PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+# Real-World Performance Comparison
+add_executable(realworld-comparison
+	MiniScript-cpp/src/MiniScript/RealWorldComparison.cpp
+)
+target_include_directories(realworld-comparison PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(realworld-comparison PRIVATE miniscript-cpp)
+set_target_properties(realworld-comparison PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+# Pure Evaluation Benchmark
+add_executable(pure-evaluation-benchmark
+	MiniScript-cpp/src/MiniScript/PureEvaluationBenchmark.cpp
+)
+target_include_directories(pure-evaluation-benchmark PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(pure-evaluation-benchmark PRIVATE miniscript-cpp)
+set_target_properties(pure-evaluation-benchmark PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
 
 install(TARGETS miniscript-cpp minicmd)
