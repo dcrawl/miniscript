@@ -12,6 +12,7 @@
 #include "MiniscriptTAC.h"
 #include "UnitTest.h"
 #include "SplitJoin.h"
+#include "ImprovedHash.h"
 
 #include <iostream>
 #include <math.h>
@@ -649,11 +650,8 @@ namespace MiniScript {
 	}
 	
 	unsigned int IntHash(int i) {
-		unsigned int x = (unsigned int)i;
-		x = ((x >> 16) ^ x) * 0x45d9f3b;
-		x = ((x >> 16) ^ x) * 0x45d9f3b;
-		x = (x >> 16) ^ x;
-		return x;
+		// Use improved avalanche hashing for better distribution
+		return ImprovedHash::hash_int_avalanche(i);
 	}
 	
 	unsigned int Value::Hash() const {
@@ -663,9 +661,8 @@ namespace MiniScript {
 				
 			case ValueType::Number:
 			{
-				// Not sure how to hash doubles... for now, we'll just do:
-				int i = data.number;
-				return IntHash(i);
+				// Use improved Fibonacci hashing for doubles instead of truncation
+				return ImprovedHash::hash_number_fibonacci_32(data.number);
 			}
 				
 			case ValueType::String:

@@ -32,6 +32,8 @@ endif()
 
 set(MINISCRIPT_HEADERS
 	MiniScript-cpp/src/MiniScript/Dictionary.h
+	MiniScript-cpp/src/MiniScript/HashMapEntryPool.h
+	MiniScript-cpp/src/MiniScript/ImprovedHash.h
 	MiniScript-cpp/src/MiniScript/List.h
 	MiniScript-cpp/src/MiniScript/MiniscriptErrors.h
 	MiniScript-cpp/src/MiniScript/MiniscriptInterpreter.h
@@ -65,6 +67,7 @@ set(MINICMD_HEADERS
 
 add_library(miniscript-cpp
 	MiniScript-cpp/src/MiniScript/Dictionary.cpp
+	MiniScript-cpp/src/MiniScript/HashMapEntryPool.cpp
 	MiniScript-cpp/src/MiniScript/List.cpp
 	MiniScript-cpp/src/MiniScript/MiniscriptInterpreter.cpp
 	MiniScript-cpp/src/MiniScript/MiniscriptIntrinsics.cpp
