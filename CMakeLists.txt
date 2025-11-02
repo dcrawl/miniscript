@@ -192,4 +192,52 @@ set_target_properties(pure-evaluation-benchmark PROPERTIES
 	CXX_STANDARD 14
 	CXX_STANDARD_REQUIRED ON)
 
+# Phase 2.2 Parsing Performance Profiler
+add_executable(parsing-profiler
+	ParsingProfiler.cpp
+)
+target_include_directories(parsing-profiler PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(parsing-profiler PRIVATE miniscript-cpp)
+set_target_properties(parsing-profiler PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+# Phase 2.2 Simple Parsing Profiler (no segfault issues)
+add_executable(simple-parsing-profiler
+	SimpleParsingProfiler.cpp
+)
+target_include_directories(simple-parsing-profiler PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(simple-parsing-profiler PRIVATE miniscript-cpp)
+set_target_properties(simple-parsing-profiler PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+# Phase 2.2 Large Code Parsing Profiler  
+add_executable(large-code-profiler
+	LargeCodeParsingProfiler.cpp
+)
+target_include_directories(large-code-profiler PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(large-code-profiler PRIVATE miniscript-cpp)
+set_target_properties(large-code-profiler PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+add_executable(lazy-loading-benchmark LazyLoadingBenchmark.cpp)
+target_link_libraries(lazy-loading-benchmark PRIVATE miniscript-cpp)
+set_target_properties(lazy-loading-benchmark PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+add_executable(operation-profiler OperationProfiler.cpp)
+target_link_libraries(operation-profiler PRIVATE miniscript-cpp)
+set_target_properties(operation-profiler PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
+add_executable(specialized-instructions SpecializedInstructions.cpp)
+target_link_libraries(specialized-instructions PRIVATE miniscript-cpp)
+set_target_properties(specialized-instructions PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED ON)
+
 install(TARGETS miniscript-cpp minicmd)
