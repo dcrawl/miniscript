@@ -12,9 +12,42 @@
 
 namespace MiniScript {
 
-	// This is the number of hash cells in the table
-	// this will work best as a prime number
-	// samples: 101, 521, 1009
+	// Dynamic hash table sizes - use prime numbers for optimal distribution
+	// Phase 1 Enhancement: Dynamic resizing capability
+	namespace DictInternal {
+		// Prime table sizes for better hash distribution
+		static const size_t PRIME_SIZES[] = {
+			251, 503, 1009, 2017, 4049, 8101, 16187, 32371, 64747, 129499,
+			258991, 517997, 1035989, 2071981, 4143961, 8287919, 16575841
+		};
+		static const size_t NUM_PRIME_SIZES = sizeof(PRIME_SIZES) / sizeof(PRIME_SIZES[0]);
+		static constexpr double MAX_LOAD_FACTOR = 0.75;
+		static constexpr double MIN_LOAD_FACTOR = 0.25;
+		
+		// Find next larger prime size
+		inline size_t GetNextTableSize(size_t currentSize) {
+			for (size_t i = 0; i < NUM_PRIME_SIZES - 1; ++i) {
+				if (PRIME_SIZES[i] == currentSize) {
+					return PRIME_SIZES[i + 1];
+				}
+			}
+			// If not found or at max, double the size (fallback)
+			return currentSize * 2;
+		}
+		
+		// Find previous smaller prime size  
+		inline size_t GetPrevTableSize(size_t currentSize) {
+			for (size_t i = 1; i < NUM_PRIME_SIZES; ++i) {
+				if (PRIME_SIZES[i] == currentSize) {
+					return PRIME_SIZES[i - 1];
+				}
+			}
+			// If not found or at min, halve the size (fallback)
+			return currentSize > 2 ? currentSize / 2 : currentSize;
+		}
+	}
+	
+	// Default table size (backward compatibility)
 	#define TABLE_SIZE 251
 
 	template <class K, class V, unsigned int HASH(const K&)> class Dictionary;
@@ -42,11 +75,14 @@ namespace MiniScript {
 	template <class K, class V>
 	class DictionaryStorage : public RefCountedStorage {
 	private:
-		DictionaryStorage() : RefCountedStorage(), mSize(0), assignOverride(nullptr), evalOverride(nullptr) { for (int i=0; i<TABLE_SIZE; i++) mTable[i] = nullptr; }
-		~DictionaryStorage() { RemoveAll(); }
+		DictionaryStorage() : RefCountedStorage(), mSize(0), mTableSize(TABLE_SIZE), assignOverride(nullptr), evalOverride(nullptr) { 
+			mTable = new HashMapEntry<K, V>*[mTableSize];
+			for (size_t i=0; i<mTableSize; i++) mTable[i] = nullptr; 
+		}
+		~DictionaryStorage() { RemoveAll(); delete[] mTable; }
 
 		void RemoveAll() {
-			for (int i = 0; i < TABLE_SIZE; i++) {
+			for (size_t i = 0; i < mTableSize; i++) {
 				if (mTable[i]) {
 					delete mTable[i];
 					mTable[i] = nullptr;
@@ -55,8 +91,13 @@ namespace MiniScript {
 			mSize = 0;
 		}
 		
+
+		
+
+		
 		long mSize;
-		HashMapEntry<K, V> *mTable[TABLE_SIZE];
+		size_t mTableSize;  // Dynamic table size
+		HashMapEntry<K, V> **mTable;  // Dynamic table
 
 		void *assignOverride;
 		void *evalOverride;
@@ -159,6 +200,7 @@ namespace MiniScript {
 		friend class Value;
 		
 		inline int hashKey(const K& key) const;
+		inline void ResizeTable(size_t newSize);
 
 		
 		void forget() { ds = nullptr; }
@@ -177,8 +219,17 @@ namespace MiniScript {
 
 	template <class K, class V, unsigned int HASH(const K&)>
 	void Dictionary<K, V, HASH>::SetValue(const K& key, const V& value) {
-		int hash = hashKey(key);
 		ensureStorage();
+		
+		// Phase 1 Enhancement: Check if resize is needed before insertion
+		double currentLoadFactor = (double)ds->mSize / (double)ds->mTableSize;
+		if (currentLoadFactor > DictInternal::MAX_LOAD_FACTOR) {
+			// Resize to larger table
+			size_t newSize = DictInternal::GetNextTableSize(ds->mTableSize);
+			ResizeTable(newSize);
+		}
+		
+		int hash = hashKey(key);
 		HashMapEntry<K, V> *entry = ds->mTable[hash];
 		while (entry) {
 			// Note: We rely here on our key types defining == in a way
@@ -209,11 +260,23 @@ namespace MiniScript {
 		HashMapEntry<K, V> *prev = nullptr;
 		while (entry) {
 			if (entry->key == key) {
+				if (output) *output = entry->value;
 				if (prev) prev->next = entry->next;
 				else ds->mTable[hash] = entry->next;
 				entry->next = nullptr;
 				delete entry;
 				ds->mSize--;
+				
+				// Phase 1 Enhancement: Check if table shrinking is needed
+				double currentLoadFactor = (double)ds->mSize / (double)ds->mTableSize;
+				if (currentLoadFactor < DictInternal::MIN_LOAD_FACTOR && ds->mTableSize > TABLE_SIZE) {
+					// Only shrink if we're above the default table size
+					size_t newSize = DictInternal::GetPrevTableSize(ds->mTableSize);
+					if (newSize >= TABLE_SIZE) {  // Don't go below default size
+						ResizeTable(newSize);
+					}
+				}
+				
 				return true;
 			}
 			prev = entry;
@@ -337,8 +400,49 @@ namespace MiniScript {
 
 	template <class K, class V, unsigned int HASH(const K&)>
 	int Dictionary<K, V, HASH>::hashKey(const K& key) const {
-		unsigned int hash = ((unsigned int)HASH(key)) % TABLE_SIZE;
+		// For const operations, use default table size if no storage exists
+		size_t tableSize = ds ? ds->mTableSize : TABLE_SIZE;
+		unsigned int hash = ((unsigned int)HASH(key)) % tableSize;
 		return hash;
+	}
+
+	template <class K, class V, unsigned int HASH(const K&)>
+	void Dictionary<K, V, HASH>::ResizeTable(size_t newSize) {
+		if (!ds || ds->mTableSize == newSize) return;
+		
+		// Save old table
+		HashMapEntry<K, V> **oldTable = ds->mTable;
+		size_t oldSize = ds->mTableSize;
+		
+		// Create new table
+		ds->mTableSize = newSize;
+		ds->mTable = new HashMapEntry<K, V>*[ds->mTableSize];
+		for (size_t i = 0; i < ds->mTableSize; i++) {
+			ds->mTable[i] = nullptr;
+		}
+		
+		// Rehash all entries from old table
+		long oldCount = ds->mSize;
+		ds->mSize = 0;  // Reset size, will be incremented during rehashing
+		
+		for (size_t i = 0; i < oldSize; i++) {
+			HashMapEntry<K, V> *entry = oldTable[i];
+			while (entry) {
+				HashMapEntry<K, V> *nextEntry = entry->next;
+				entry->next = nullptr;  // Break the chain
+				
+				// Rehash this entry into new table using Dictionary's hash function
+				unsigned int newHash = ((unsigned int)HASH(entry->key)) % ds->mTableSize;
+				entry->next = ds->mTable[newHash];
+				ds->mTable[newHash] = entry;
+				ds->mSize++;
+				
+				entry = nextEntry;
+			}
+		}
+		
+		// Clean up old table
+		delete[] oldTable;
 	}
 
 	// DictIterator methods:

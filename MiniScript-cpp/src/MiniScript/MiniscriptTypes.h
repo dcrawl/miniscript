@@ -14,8 +14,7 @@
 #include "Dictionary.h"
 
 // Phase 1 Optimization: Dynamic Dictionary Feature Flag
-// Note: Currently disabled due to integration complexity
-// TODO: Complete integration in separate implementation file
+// Enable to use dynamic resizing dictionary instead of fixed 251-bucket table
 #ifndef MINISCRIPT_USE_DYNAMIC_DICTIONARY
 #define MINISCRIPT_USE_DYNAMIC_DICTIONARY 0
 #endif
@@ -37,7 +36,7 @@ namespace MiniScript {
 	typedef List<Value> ValueList;
 	typedef ListStorage<Value> ValueListStorage;
 	
-	// Original fixed-size dictionary (dynamic version disabled due to integration complexity)
+	// Dictionary typedefs - always available for backward compatibility
 	typedef DictionaryStorage<Value, Value> ValueDictStorage;
 	typedef DictIterator<Value, Value> ValueDictIterator;
 	typedef Dictionary<Value, Value, HashValue> ValueDict;
@@ -258,6 +257,10 @@ namespace MiniScript {
 		bool RecursiveEqual(Value rhs) const;
 		unsigned int RecursiveHash() const;
 	};
+	
+	// NOTE: Dynamic dictionary integration requires API-compatible replacement
+	// Current approach: Keep original Dictionary, enhance with dynamic features
+	// Alternative approach: Compile-time replacement (not implemented yet)
 	
 	class FuncParam {
 	public:
