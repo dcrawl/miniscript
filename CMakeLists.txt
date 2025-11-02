@@ -59,6 +59,8 @@ set(MINICMD_HEADERS
 	MiniScript-cpp/src/editline/editline.h
 	MiniScript-cpp/src/editline/unix.h
 	MiniScript-cpp/src/whereami/whereami.h
+	MiniScript-cpp/src/TermIntrinsics.h
+	MiniScript-cpp/src/TermIO.h
 )
 
 add_library(miniscript-cpp
@@ -98,6 +100,8 @@ add_executable(minicmd
 	MiniScript-cpp/src/ShellIntrinsics.cpp
 	MiniScript-cpp/src/ShellExec.cpp
 	MiniScript-cpp/src/whereami/whereami.c
+	MiniScript-cpp/src/TermIntrinsics.cpp
+	MiniScript-cpp/src/TermIO.cpp
 	${EDITLINE_SRC}
 	${MINICMD_HEADERS}
 )

@@ -23,6 +23,7 @@
 #include "MiniScript/SplitJoin.h"
 #include "ShellIntrinsics.h"
 #include "DateTimeUtils.h"	// TEMP for initial testing
+#include "TermIntrinsics.h"
 
 // YIELD_NANOSECONDS: How many nano-seconds to sleep when yielding.
 #define YIELD_NANOSECONDS 10000000
@@ -286,6 +287,7 @@ int main(int argc, const char * argv[]) {
 	AddPathEnvVars();
 	AddScriptPathVar("");
 	AddShellIntrinsics();
+	AddTermIntrinsics();
 	
 	Interpreter interp;
 	ConfigInterpreter(interp);

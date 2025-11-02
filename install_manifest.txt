@@ -1,0 +1,2 @@
+/usr/local/lib/libminiscript-cpp.a
+/usr/local/bin/miniscript

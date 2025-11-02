@@ -5,6 +5,8 @@
 // the screen, move the cursor, turn bold text on/off, etc.
 
 esc = char(27)
+normal = esc + "[0m"         // was "[m"
+
 
 // character styles
 bold = esc + "[1m"
@@ -91,6 +93,11 @@ color.teal = 37
 color.white = 255
 color.yellow = 226
 
+sgr = function(params); return esc + "[" + params + "m"; end function
+trueTextColor = function(r,g,b); return esc + "[38;2;" + r + ";" + g + ";" + b + "m"; end function
+trueBackColor = function(r,g,b); return esc + "[48;2;" + r + ";" + g + ";" + b + "m"; end function
+
+
 // cursor movement
 cursor = {}
 cursor.up = function(n=1); return esc + "[" + n + "A"; end function
@@ -98,9 +105,12 @@ cursor.down = function(n=1); return esc + "[" + n + "B"; end function
 cursor.left = function(n=1); return esc + "[" + n + "D"; end function
 cursor.right = function(n=1); return esc + "[" + n + "C"; end function
 cursor.nextLine = esc + "E"
-cursor.home = esc + "[f"		// (moves cursor to upper left)
+//cursor.home = esc + "[f"		// (moves cursor to upper left)
+cursor.home = esc + "[H"     // canonical home (HVP without params works too)
 cursor.save = esc + "7"
 cursor.restore = esc + "8"
+cursor.hide = esc + "[?25l"
+cursor.show = esc + "[?25h"
 // cursor.goto: row is measured from the top, col is from the left,
 // both starting at 1.
 cursor.goto = function(row,col); return esc + "[" + row + ";" + col + "H"; end function
@@ -128,6 +138,7 @@ clearLineToLeft = esc + "[1K"
 clearLine = esc + "[2K"
 clearBelow = esc + "[J"
 clearAbove = esc + "[1J"
+clearScreen = esc + "[2J" + esc + "[H"   // clear + home
 reset = esc + "c"  // (clear, plus also resets all state)
 
 // LEDs, if your terminal has these (most don't anymore)
@@ -135,6 +146,27 @@ ledOn = function(n=1)
 	return esc + "[" + n + "q"
 end function
 ledsOff = ledOn(0)
+
+altScreen = function(on=true)
+    if on then return esc + "[?1049h" else return esc + "[?1049l"
+end function
+
+wrap   = function(on=true); return esc + "[?" + (on and "7h" or "7l"); end function   // DECAWM
+origin = function(on=true); return esc + "[?" + (on and "6h" or "6l"); end function   // DECOM
+
+setScrollRegion  = function(t,b); return esc + "[" + t + ";" + b + "r"; end function
+resetScrollRegion = esc + "[r"
+
+insertLines = function(n=1); return esc + "[" + n + "L"; end function
+deleteLines = function(n=1); return esc + "[" + n + "D"; end function
+insertChars = function(n=1); return esc + "[" + n + "@"; end function
+deleteChars = function(n=1); return esc + "[" + n + "P"; end function
+
+bracketedPaste = function(on=true); return esc + "[?" + (on and "2004h" or "2004l"); end function
+
+enterApp = function; return altScreen(true) + cursor.hide + clearScreen + normal; end function
+leaveApp = function; return normal + cursor.show + altScreen(false); end function
+
 
 demo = function
 	print reset + clear + cursor.home
