@@ -192,9 +192,10 @@ set_target_properties(pure-evaluation-benchmark PROPERTIES
 	CXX_STANDARD 14
 	CXX_STANDARD_REQUIRED ON)
 
+# Development and Testing Tools (moved to testing/ directory)
 # Phase 2.2 Parsing Performance Profiler
 add_executable(parsing-profiler
-	ParsingProfiler.cpp
+	testing/jit-development/ParsingProfiler.cpp
 )
 target_include_directories(parsing-profiler PRIVATE MiniScript-cpp/src/MiniScript)
 target_link_libraries(parsing-profiler PRIVATE miniscript-cpp)
@@ -204,7 +205,7 @@ set_target_properties(parsing-profiler PROPERTIES
 
 # Phase 2.2 Simple Parsing Profiler (no segfault issues)
 add_executable(simple-parsing-profiler
-	SimpleParsingProfiler.cpp
+	testing/jit-development/SimpleParsingProfiler.cpp
 )
 target_include_directories(simple-parsing-profiler PRIVATE MiniScript-cpp/src/MiniScript)
 target_link_libraries(simple-parsing-profiler PRIVATE miniscript-cpp)
@@ -214,7 +215,7 @@ set_target_properties(simple-parsing-profiler PROPERTIES
 
 # Phase 2.2 Large Code Parsing Profiler  
 add_executable(large-code-profiler
-	LargeCodeParsingProfiler.cpp
+	testing/jit-development/LargeCodeParsingProfiler.cpp
 )
 target_include_directories(large-code-profiler PRIVATE MiniScript-cpp/src/MiniScript)
 target_link_libraries(large-code-profiler PRIVATE miniscript-cpp)
@@ -222,19 +223,19 @@ set_target_properties(large-code-profiler PROPERTIES
 	CXX_STANDARD 14
 	CXX_STANDARD_REQUIRED ON)
 
-add_executable(lazy-loading-benchmark LazyLoadingBenchmark.cpp)
+add_executable(lazy-loading-benchmark testing/jit-development/LazyLoadingBenchmark.cpp)
 target_link_libraries(lazy-loading-benchmark PRIVATE miniscript-cpp)
 set_target_properties(lazy-loading-benchmark PROPERTIES
 	CXX_STANDARD 14
 	CXX_STANDARD_REQUIRED ON)
 
-add_executable(operation-profiler OperationProfiler.cpp)
+add_executable(operation-profiler testing/jit-development/OperationProfiler.cpp)
 target_link_libraries(operation-profiler PRIVATE miniscript-cpp)
 set_target_properties(operation-profiler PROPERTIES
 	CXX_STANDARD 14
 	CXX_STANDARD_REQUIRED ON)
 
-add_executable(specialized-instructions SpecializedInstructions.cpp)
+add_executable(specialized-instructions testing/jit-development/SpecializedInstructions.cpp)
 target_link_libraries(specialized-instructions PRIVATE miniscript-cpp)
 set_target_properties(specialized-instructions PROPERTIES
 	CXX_STANDARD 14
@@ -247,7 +248,7 @@ if(LLVM_CONFIG_EXECUTABLE)
     execute_process(COMMAND ${LLVM_CONFIG_EXECUTABLE} --ldflags OUTPUT_VARIABLE LLVM_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
     execute_process(COMMAND ${LLVM_CONFIG_EXECUTABLE} --libs core executionengine mcjit native OUTPUT_VARIABLE LLVM_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
     
-    add_executable(expression-jit ExpressionJIT.cpp)
+    add_executable(expression-jit testing/jit-development/ExpressionJIT.cpp)
     target_link_libraries(expression-jit PRIVATE miniscript-cpp)
     
     # Add LLVM flags
@@ -267,13 +268,13 @@ else()
 endif()
 
 # Phase 3.1A: Simple Expression JIT (no LLVM dependencies)
-add_executable(simple-jit SimpleExpressionJIT.cpp)
+add_executable(simple-jit testing/jit-development/SimpleExpressionJIT.cpp)
 set_target_properties(simple-jit PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON)
 
 # Phase 3.1A: Advanced Expression JIT (optimized proof of concept)
-add_executable(advanced-jit AdvancedJIT.cpp)
+add_executable(advanced-jit testing/jit-development/AdvancedJIT.cpp)
 set_target_properties(advanced-jit PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON)
@@ -283,7 +284,7 @@ if(LLVM_CONFIG_EXECUTABLE)
     # Get modern LLVM ORC components
     execute_process(COMMAND ${LLVM_CONFIG_EXECUTABLE} --libs core orcjit support target native OUTPUT_VARIABLE LLVM_ORC_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
     
-    add_executable(miniscript-jit MiniScriptJIT.cpp)
+    add_executable(miniscript-jit testing/jit-development/MiniScriptJIT.cpp)
     target_link_libraries(miniscript-jit PRIVATE miniscript-cpp)
     
     # Add LLVM ORC flags
@@ -302,7 +303,7 @@ else()
 endif()
 
 # Phase 3.2B: Expression Profiler (standalone test)
-add_executable(profiler-test ProfilerTest.cpp)
+add_executable(profiler-test testing/jit-development/ProfilerTest.cpp)
 set_target_properties(profiler-test PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON)
@@ -310,9 +311,9 @@ message(STATUS "Phase 3.2B Expression Profiler test enabled")
 
 # Phase 3.2C: Advanced IR Generation (comprehensive TAC-to-LLVM-IR)
 if(LLVM_CONFIG_EXECUTABLE)
-    add_executable(advanced-ir-test MiniScript-cpp/src/Phase3_2C_Test.cpp
+    add_executable(advanced-ir-test testing/validation/Phase3_2C_Test.cpp
                                    MiniScript-cpp/src/AdvancedIRGenerator.cpp)
-    target_include_directories(advanced-ir-test PRIVATE MiniScript-cpp/src/MiniScript)
+    target_include_directories(advanced-ir-test PRIVATE ${CMAKE_SOURCE_DIR}/MiniScript-cpp/src/MiniScript ${CMAKE_SOURCE_DIR}/MiniScript-cpp/src)
     target_link_libraries(advanced-ir-test PRIVATE miniscript-cpp)
     
     # Add LLVM flags for advanced IR generation
@@ -329,10 +330,11 @@ else()
     message(WARNING "Phase 3.2C Advanced IR Generation disabled (LLVM not found)")
 endif()
 
+# JIT Development and Testing Targets (moved to testing/ directory)
 # Phase 3.2D: Runtime Integration (production JIT system)
 if(LLVM_CONFIG_EXECUTABLE)
-    add_executable(runtime-integration-test MiniScript-cpp/src/Phase3_2D_Standalone.cpp)
-    target_include_directories(runtime-integration-test PRIVATE MiniScript-cpp/src/MiniScript)
+    add_executable(runtime-integration-test testing/validation/Phase3_2D_Standalone.cpp)
+    target_include_directories(runtime-integration-test PRIVATE MiniScript-cpp/src)
     target_link_libraries(runtime-integration-test PRIVATE miniscript-cpp)
     
     # Add LLVM flags for runtime integration
@@ -350,8 +352,8 @@ else()
 endif()
 
 # Phase 3.3: Production Interpreter Integration  
-add_executable(production-jit-test MiniScript-cpp/src/Phase3_3_Standalone.cpp)
-target_include_directories(production-jit-test PRIVATE MiniScript-cpp/src/MiniScript)
+add_executable(production-jit-test testing/validation/Phase3_3_Standalone.cpp)
+target_include_directories(production-jit-test PRIVATE MiniScript-cpp/src)
 target_link_libraries(production-jit-test PRIVATE miniscript-cpp)
 
 set_target_properties(production-jit-test PROPERTIES
@@ -361,8 +363,8 @@ set_target_properties(production-jit-test PROPERTIES
 message(STATUS "Phase 3.3 Production Interpreter Integration target enabled")
 
 # Accuracy and Performance Validation Suite
-add_executable(accuracy-performance-test MiniScript-cpp/src/AccuracyAndPerformanceTest.cpp)
-target_include_directories(accuracy-performance-test PRIVATE MiniScript-cpp/src/MiniScript)
+add_executable(accuracy-performance-test testing/validation/AccuracyAndPerformanceTest.cpp)
+target_include_directories(accuracy-performance-test PRIVATE MiniScript-cpp/src)
 target_link_libraries(accuracy-performance-test PRIVATE miniscript-cpp)
 
 set_target_properties(accuracy-performance-test PROPERTIES
@@ -372,8 +374,8 @@ set_target_properties(accuracy-performance-test PROPERTIES
 message(STATUS "Accuracy and Performance Validation Suite enabled")
 
 # JIT Performance Projection Test
-add_executable(jit-projection-test MiniScript-cpp/src/JITProjectionTest.cpp)
-target_include_directories(jit-projection-test PRIVATE MiniScript-cpp/src/MiniScript)
+add_executable(jit-projection-test testing/validation/JITProjectionTest.cpp)
+target_include_directories(jit-projection-test PRIVATE MiniScript-cpp/src)
 target_link_libraries(jit-projection-test PRIVATE miniscript-cpp)
 
 set_target_properties(jit-projection-test PROPERTIES
