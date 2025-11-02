@@ -8,6 +8,8 @@
 
 #include "MiniscriptParser.h"
 #include "MiniscriptErrors.h"
+#include "ContextPool.h"
+#include "TypeSpecializationEngine.h"
 #include "MiniscriptIntrinsics.h"
 #include "UnitTest.h"
 
@@ -208,6 +210,11 @@ namespace MiniScript {
 				tokens.Dequeue();
 				if (outputStack.Count() > 1) {
 					CheckForOpenBackpatches(tokens.lineNum() + 1);
+					
+					// Apply type specialization optimization to the completed function
+					TypeSpecializationEngine engine;
+					engine.specializeFunction(output->code);
+					
 					outputStack.Pop();
 					output = &outputStack.Last();
 				} else {
@@ -1104,7 +1111,9 @@ namespace MiniScript {
 	}
 
 	Machine *Parser::CreateVM(TextOutputMethod standardOutput) {
-		Context *root = new Context();
+		auto& pool = ContextPool::instance();
+		Context *root = pool.acquire();
+		root->reset();  // Reset the acquired context
 		if (output) {
 			root->code = output->code;
 		}
@@ -1121,6 +1130,11 @@ namespace MiniScript {
 		// Add one additional line to return `locals` as the function return value.
 		Value locals = Value::Var("locals");
 		output->Add(TACLine(Value::Temp(0), TACLine::Op::ReturnA, locals));
+		
+		// Apply type specialization optimization to the import function
+		TypeSpecializationEngine engine;
+		engine.specializeFunction(output->code);
+		
 		// Then wrap the whole thing in a Function.
 		FunctionStorage *func = new FunctionStorage();
 		func->code = output->code;

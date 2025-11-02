@@ -54,7 +54,31 @@ namespace MiniScript {
 			ReturnA,
 			ElemBofA,
 			ElemBofIterA,
-			LengthOfA
+			LengthOfA,
+			
+			// Type-Specialized Instructions for enhanced performance
+			// Added by Type-Specialized Instructions optimization
+			
+			// Specialized arithmetic operations (type-guaranteed at compile time)
+			ADD_NUM_NUM,        // a + b where both are guaranteed numbers
+			SUB_NUM_NUM,        // a - b where both are guaranteed numbers  
+			MUL_NUM_NUM,        // a * b where both are guaranteed numbers
+			DIV_NUM_NUM,        // a / b where both are guaranteed numbers
+			ADD_STR_STR,        // a + b where both are guaranteed strings (concatenation)
+			
+			// Specialized comparison operations (type-guaranteed at compile time) 
+			EQ_NUM_NUM,         // a == b where both are guaranteed numbers
+			NE_NUM_NUM,         // a != b where both are guaranteed numbers
+			LT_NUM_NUM,         // a < b where both are guaranteed numbers
+			LE_NUM_NUM,         // a <= b where both are guaranteed numbers
+			GT_NUM_NUM,         // a > b where both are guaranteed numbers
+			GE_NUM_NUM,         // a >= b where both are guaranteed numbers
+			
+			// Specialized container operations (key type known at compile time)
+			MAP_GET_STR,        // map[string_key] where key is guaranteed string
+			MAP_SET_STR,        // map[string_key] = value where key is guaranteed string
+			LIST_GET_NUM,       // list[index] where index is guaranteed number
+			LIST_SET_NUM        // list[index] = value where index is guaranteed number
 		};
 		
 		Value lhs;
@@ -98,6 +122,36 @@ namespace MiniScript {
         void ClearCodeAndTemps() {
             code.Clear();
             lineNum = 0;
+            temps.Clear();
+        }
+        
+        /// Clear all context state for pooling reuse
+        void clear() {
+            code.Clear();
+            lineNum = 0;
+            variables.RemoveAll();
+            outerVars.RemoveAll();
+            args.Clear();
+            parent = nullptr;
+            resultStorage = Value::null;
+            vm = nullptr;
+            partialResult = IntrinsicResult::Null;
+            implicitResultCounter = 0;
+            temps.Clear();
+        }
+        
+        /// Reset context for reuse (lighter than clear, keeps some allocations)
+        void reset() {
+            lineNum = 0;
+            parent = nullptr;
+            resultStorage = Value::null;
+            vm = nullptr;
+            partialResult = IntrinsicResult::Null;
+            implicitResultCounter = 0;
+            // Keep variables/outerVars/args/temps allocated but empty for reuse
+            variables.RemoveAll();
+            outerVars.RemoveAll(); 
+            args.Clear();
             temps.Clear();
         }
         

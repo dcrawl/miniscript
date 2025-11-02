@@ -44,6 +44,7 @@ set(MINISCRIPT_HEADERS
 	MiniScript-cpp/src/MiniScript/MiniscriptTAC.h
 	MiniScript-cpp/src/MiniScript/MiniscriptTypes.h
 	MiniScript-cpp/src/MiniScript/OptimizedEvaluators.h
+	MiniScript-cpp/src/MiniScript/TypeSpecializationEngine.h
 	MiniScript-cpp/src/MiniScript/QA.h
 	MiniScript-cpp/src/MiniScript/RefCountedStorage.h
 	MiniScript-cpp/src/MiniScript/SimpleString.h
@@ -78,6 +79,7 @@ add_library(miniscript-cpp
 	MiniScript-cpp/src/MiniScript/MiniscriptTAC.cpp
 	MiniScript-cpp/src/MiniScript/MiniscriptTypes.cpp
 	MiniScript-cpp/src/MiniScript/OptimizedEvaluators.cpp
+	MiniScript-cpp/src/MiniScript/TypeSpecializationEngine.cpp
 	MiniScript-cpp/src/MiniScript/QA.cpp
 	MiniScript-cpp/src/MiniScript/SimpleString.cpp
 	MiniScript-cpp/src/MiniScript/SimpleVector.cpp

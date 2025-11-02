@@ -14,6 +14,7 @@
 #include "Dictionary.h"
 #include "MiniscriptTAC.h"
 #include "MiniscriptLexer.h"
+#include "TypeSpecializationEngine.h"
 
 namespace MiniScript {
 	

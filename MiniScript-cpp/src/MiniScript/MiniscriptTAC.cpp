@@ -7,6 +7,7 @@
 //
 
 #include "MiniscriptTAC.h"
+#include "ContextPool.h"
 #include <math.h>		// for pow() and fmod()
 #include <cmath>		// for std::signbit()
 #if _WIN32 || _WIN64
@@ -123,6 +124,48 @@ namespace MiniScript {
 			case Op::LengthOfA:
 				text = lhs.ToString() + " := len(" + rhsA.ToString() + ")";
 				break;
+				
+			// Type-Specialized Instructions - Enhanced toString for debugging
+			case Op::ADD_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " +[NUM] " + rhsB.ToString();
+				break;
+			case Op::SUB_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " -[NUM] " + rhsB.ToString();
+				break;
+			case Op::MUL_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " *[NUM] " + rhsB.ToString();
+				break;
+			case Op::DIV_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " /[NUM] " + rhsB.ToString();
+				break;
+			case Op::ADD_STR_STR:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " +[STR] " + rhsB.ToString();
+				break;
+			case Op::EQ_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " ==[NUM] " + rhsB.ToString();
+				break;
+			case Op::NE_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " !=[NUM] " + rhsB.ToString();
+				break;
+			case Op::LT_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " <[NUM] " + rhsB.ToString();
+				break;
+			case Op::LE_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " <=[NUM] " + rhsB.ToString();
+				break;
+			case Op::GT_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " >[NUM] " + rhsB.ToString();
+				break;
+			case Op::GE_NUM_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + " >=[NUM] " + rhsB.ToString();
+				break;
+			case Op::MAP_GET_STR:
+				text = lhs.ToString() + " := " + rhsA.ToString() + "[STR]" + rhsB.ToString();
+				break;
+			case Op::LIST_GET_NUM:
+				text = lhs.ToString() + " := " + rhsA.ToString() + "[NUM]" + rhsB.ToString();
+				break;
+				
 			default:
 				MiniscriptException(String("unknown opcode: ") + String::Format((int)op)).raise();
 				
@@ -157,6 +200,62 @@ namespace MiniScript {
 			// list or map, to ensure that if the same code executes again,
 			// we get a new, unique object.
 			return rhsA.EvalCopy((context));
+		}
+		
+		// Type-Specialized Instructions - Ultra-fast paths with compile-time type guarantees
+		// These operations have type safety verified at compile time for maximum performance
+		switch (op) {
+			// Specialized arithmetic operations - no type checking needed
+			case Op::ADD_NUM_NUM:
+				return Value(rhsA.data.number + rhsB.data.number);
+			case Op::SUB_NUM_NUM:
+				return Value(rhsA.data.number - rhsB.data.number);
+			case Op::MUL_NUM_NUM:
+				return Value(rhsA.data.number * rhsB.data.number);
+			case Op::DIV_NUM_NUM: {
+				double divisor = rhsB.data.number;
+				if (divisor == 0.0) {
+					RuntimeException("Division by zero").raise();
+				}
+				return Value(rhsA.data.number / divisor);
+			}
+			case Op::ADD_STR_STR: {
+				// Direct string concatenation - types guaranteed
+				const String& sA = rhsA.GetString();
+				const String& sB = rhsB.GetString();
+				return Value(sA + sB);
+			}
+			
+			// Specialized numeric comparison operations - no type checking needed
+			case Op::EQ_NUM_NUM:
+				return Value::Truth(rhsA.data.number == rhsB.data.number);
+			case Op::NE_NUM_NUM:
+				return Value::Truth(rhsA.data.number != rhsB.data.number);
+			case Op::LT_NUM_NUM:
+				return Value::Truth(rhsA.data.number < rhsB.data.number);
+			case Op::LE_NUM_NUM:
+				return Value::Truth(rhsA.data.number <= rhsB.data.number);
+			case Op::GT_NUM_NUM:
+				return Value::Truth(rhsA.data.number > rhsB.data.number);
+			case Op::GE_NUM_NUM:
+				return Value::Truth(rhsA.data.number >= rhsB.data.number);
+			
+			// Specialized container access operations
+			case Op::MAP_GET_STR: {
+				// Direct map string key lookup - types guaranteed
+				Value opA = rhsA.Val(context);
+				Value opB = rhsB.Val(context);
+				return opA.GetElem(opB);
+			}
+			case Op::LIST_GET_NUM: {
+				// Direct list numeric index access - types guaranteed  
+				Value opA = rhsA.Val(context);
+				Value opB = rhsB.Val(context);
+				return opA.GetElem(opB);
+			}
+			
+			default:
+				break;  // Fall through to Phase 2.1 fast paths
 		}
 		
 		// Phase 2.1 Fast Path Optimizations - Check before expensive Val() calls
@@ -653,7 +752,10 @@ namespace MiniScript {
 	/// <param name="gotSelf">Whether this method was called with dot syntax.</param>
 	/// <param name="resultStorage">Value to stuff the result into when done.</param>
 	Context* Context::NextCallContext(FunctionStorage *func, long argCount, bool gotSelf, Value resultStorage) {
-		Context* result = new Context();
+		Context* result = ContextPool::instance().acquire();
+		
+		// Reset the acquired context for reuse
+		result->reset();
 		
 		result->code = func->code;
 		result->resultStorage = resultStorage;
@@ -702,8 +804,9 @@ namespace MiniScript {
 	}
 	
 	Machine::~Machine() {
+		auto& pool = ContextPool::instance();
 		for (long i = stack.Count() - 1; i >= 0; i--) {
-			delete stack[i];
+			pool.release(stack[i]);
 		}
 		stack.Clear();
 	}
@@ -805,7 +908,7 @@ namespace MiniScript {
 		Context* context = stack.Pop();
 		Value result = context->GetTemp(0, Value::null);
 		Value storage = context->resultStorage;
-		delete context;
+		ContextPool::instance().release(context);
 		context = stack.Last();
 		context->StoreValue(storage, result);
 	}
