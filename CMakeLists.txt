@@ -240,4 +240,148 @@ set_target_properties(specialized-instructions PROPERTIES
 	CXX_STANDARD 14
 	CXX_STANDARD_REQUIRED ON)
 
+# Phase 3.1A: Expression JIT Compiler
+find_program(LLVM_CONFIG_EXECUTABLE NAMES llvm-config PATHS /opt/homebrew/Cellar/llvm@17/17.0.6/bin NO_DEFAULT_PATH)
+if(LLVM_CONFIG_EXECUTABLE)
+    execute_process(COMMAND ${LLVM_CONFIG_EXECUTABLE} --cppflags OUTPUT_VARIABLE LLVM_CPPFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${LLVM_CONFIG_EXECUTABLE} --ldflags OUTPUT_VARIABLE LLVM_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${LLVM_CONFIG_EXECUTABLE} --libs core executionengine mcjit native OUTPUT_VARIABLE LLVM_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    
+    add_executable(expression-jit ExpressionJIT.cpp)
+    target_link_libraries(expression-jit PRIVATE miniscript-cpp)
+    
+    # Add LLVM flags
+    separate_arguments(LLVM_CPPFLAGS_LIST UNIX_COMMAND "${LLVM_CPPFLAGS}")
+    separate_arguments(LLVM_LDFLAGS_LIST UNIX_COMMAND "${LLVM_LDFLAGS}")
+    separate_arguments(LLVM_LIBS_LIST UNIX_COMMAND "${LLVM_LIBS}")
+    
+    target_compile_options(expression-jit PRIVATE ${LLVM_CPPFLAGS_LIST})
+    target_link_options(expression-jit PRIVATE ${LLVM_LDFLAGS_LIST})
+    target_link_libraries(expression-jit PRIVATE ${LLVM_LIBS_LIST})
+    
+    set_target_properties(expression-jit PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON)
+else()
+    message(WARNING "LLVM not found - Expression JIT will not be built")
+endif()
+
+# Phase 3.1A: Simple Expression JIT (no LLVM dependencies)
+add_executable(simple-jit SimpleExpressionJIT.cpp)
+set_target_properties(simple-jit PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON)
+
+# Phase 3.1A: Advanced Expression JIT (optimized proof of concept)
+add_executable(advanced-jit AdvancedJIT.cpp)
+set_target_properties(advanced-jit PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON)
+
+# Phase 3.2A: Modern LLVM ORC v2 JIT Integration
+if(LLVM_CONFIG_EXECUTABLE)
+    # Get modern LLVM ORC components
+    execute_process(COMMAND ${LLVM_CONFIG_EXECUTABLE} --libs core orcjit support target native OUTPUT_VARIABLE LLVM_ORC_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    
+    add_executable(miniscript-jit MiniScriptJIT.cpp)
+    target_link_libraries(miniscript-jit PRIVATE miniscript-cpp)
+    
+    # Add LLVM ORC flags
+    separate_arguments(LLVM_ORC_LIBS_LIST UNIX_COMMAND "${LLVM_ORC_LIBS}")
+    target_compile_options(miniscript-jit PRIVATE ${LLVM_CPPFLAGS_LIST})
+    target_link_options(miniscript-jit PRIVATE ${LLVM_LDFLAGS_LIST})
+    target_link_libraries(miniscript-jit PRIVATE ${LLVM_ORC_LIBS_LIST})
+    
+    set_target_properties(miniscript-jit PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON)
+    
+    message(STATUS "Phase 3.2A Modern LLVM ORC JIT target enabled")
+else()
+    message(WARNING "Phase 3.2A LLVM ORC JIT disabled (LLVM not found)")
+endif()
+
+# Phase 3.2B: Expression Profiler (standalone test)
+add_executable(profiler-test ProfilerTest.cpp)
+set_target_properties(profiler-test PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON)
+message(STATUS "Phase 3.2B Expression Profiler test enabled")
+
+# Phase 3.2C: Advanced IR Generation (comprehensive TAC-to-LLVM-IR)
+if(LLVM_CONFIG_EXECUTABLE)
+    add_executable(advanced-ir-test MiniScript-cpp/src/Phase3_2C_Test.cpp
+                                   MiniScript-cpp/src/AdvancedIRGenerator.cpp)
+    target_include_directories(advanced-ir-test PRIVATE MiniScript-cpp/src/MiniScript)
+    target_link_libraries(advanced-ir-test PRIVATE miniscript-cpp)
+    
+    # Add LLVM flags for advanced IR generation
+    target_compile_options(advanced-ir-test PRIVATE ${LLVM_CPPFLAGS_LIST})
+    target_link_options(advanced-ir-test PRIVATE ${LLVM_LDFLAGS_LIST})
+    target_link_libraries(advanced-ir-test PRIVATE ${LLVM_ORC_LIBS_LIST})
+    
+    set_target_properties(advanced-ir-test PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON)
+    
+    message(STATUS "Phase 3.2C Advanced IR Generation target enabled")
+else()
+    message(WARNING "Phase 3.2C Advanced IR Generation disabled (LLVM not found)")
+endif()
+
+# Phase 3.2D: Runtime Integration (production JIT system)
+if(LLVM_CONFIG_EXECUTABLE)
+    add_executable(runtime-integration-test MiniScript-cpp/src/Phase3_2D_Standalone.cpp)
+    target_include_directories(runtime-integration-test PRIVATE MiniScript-cpp/src/MiniScript)
+    target_link_libraries(runtime-integration-test PRIVATE miniscript-cpp)
+    
+    # Add LLVM flags for runtime integration
+    target_compile_options(runtime-integration-test PRIVATE ${LLVM_CPPFLAGS_LIST})
+    target_link_options(runtime-integration-test PRIVATE ${LLVM_LDFLAGS_LIST})
+    target_link_libraries(runtime-integration-test PRIVATE ${LLVM_ORC_LIBS_LIST})
+    
+    set_target_properties(runtime-integration-test PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON)
+    
+    message(STATUS "Phase 3.2D Runtime Integration target enabled")
+else()
+    message(WARNING "LLVM not found. Phase 3.2D Runtime Integration target disabled.")
+endif()
+
+# Phase 3.3: Production Interpreter Integration  
+add_executable(production-jit-test MiniScript-cpp/src/Phase3_3_Standalone.cpp)
+target_include_directories(production-jit-test PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(production-jit-test PRIVATE miniscript-cpp)
+
+set_target_properties(production-jit-test PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON)
+
+message(STATUS "Phase 3.3 Production Interpreter Integration target enabled")
+
+# Accuracy and Performance Validation Suite
+add_executable(accuracy-performance-test MiniScript-cpp/src/AccuracyAndPerformanceTest.cpp)
+target_include_directories(accuracy-performance-test PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(accuracy-performance-test PRIVATE miniscript-cpp)
+
+set_target_properties(accuracy-performance-test PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON)
+
+message(STATUS "Accuracy and Performance Validation Suite enabled")
+
+# JIT Performance Projection Test
+add_executable(jit-projection-test MiniScript-cpp/src/JITProjectionTest.cpp)
+target_include_directories(jit-projection-test PRIVATE MiniScript-cpp/src/MiniScript)
+target_link_libraries(jit-projection-test PRIVATE miniscript-cpp)
+
+set_target_properties(jit-projection-test PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON)
+
+message(STATUS "JIT Performance Projection Test enabled")
+
+message(STATUS "Phase 3.1A Expression JIT targets enabled")
+
 install(TARGETS miniscript-cpp minicmd)

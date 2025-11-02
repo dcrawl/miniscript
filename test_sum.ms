@@ -1,0 +1,6 @@
+// Test basic sum calculation
+sum = 0
+for i in range(1, 101)
+    sum = sum + i
+end for
+print sum
