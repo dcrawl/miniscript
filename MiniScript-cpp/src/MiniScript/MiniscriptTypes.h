@@ -13,6 +13,13 @@
 #include "List.h"
 #include "Dictionary.h"
 
+// Phase 1 Optimization: Dynamic Dictionary Feature Flag
+// Note: Currently disabled due to integration complexity
+// TODO: Complete integration in separate implementation file
+#ifndef MINISCRIPT_USE_DYNAMIC_DICTIONARY
+#define MINISCRIPT_USE_DYNAMIC_DICTIONARY 0
+#endif
+
 #include <cstdint>
 
 namespace MiniScript {
@@ -29,6 +36,8 @@ namespace MiniScript {
 	
 	typedef List<Value> ValueList;
 	typedef ListStorage<Value> ValueListStorage;
+	
+	// Original fixed-size dictionary (dynamic version disabled due to integration complexity)
 	typedef DictionaryStorage<Value, Value> ValueDictStorage;
 	typedef DictIterator<Value, Value> ValueDictIterator;
 	typedef Dictionary<Value, Value, HashValue> ValueDict;
